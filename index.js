@@ -56,8 +56,9 @@ module.exports = function create (opts) {
       createWindow()
     }
 
-    menubar.showWindow = showWindow
-    menubar.hideWindow = hideWindow
+    menubar.showWindow  = showWindow
+    menubar.hideWindow  = hideWindow
+    menubar.preposition = positionWindow
 
     menubar.positioner
 
@@ -87,7 +88,7 @@ module.exports = function create (opts) {
 
       menubar.positioner = new Positioner(menubar.window)
 
-      if (!opts['always-on-top']) {
+      if (!opts['always-on-top'] || opts['always-listen-blur']) {
         menubar.window.on('blur', hideWindow)
       }
 
@@ -99,14 +100,8 @@ module.exports = function create (opts) {
       menubar.emit('after-create-window')
     }
 
-    function showWindow (trayPos) {
-      if (!menubar.window) {
-        createWindow()
-      }
+    function positionWindow( trayPos ){
 
-      menubar.emit('show')
-
-      // Default the window to the right if `trayPos` bounds are undefined or null.
       var noBoundsPosition = null
       if ((trayPos === undefined || trayPos.x === 0) && opts['window-position'].substr(0, 4) === 'tray') {
         noBoundsPosition = (process.platform === 'win32') ? 'bottomRight' : 'topRight'
@@ -118,6 +113,18 @@ module.exports = function create (opts) {
       var y = (opts.y !== undefined) ? opts.y : position.y
 
       menubar.window.setPosition(x, y)
+      
+    }
+
+    function showWindow (trayPos) {
+      if (!menubar.window) {
+        createWindow()
+      }
+
+      menubar.emit('show')
+
+      // Default the window to the right if `trayPos` bounds are undefined or null.
+      positionWindow( trayPos )
       menubar.window.show()
       menubar.emit('after-show')
       return

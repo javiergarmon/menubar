@@ -56,9 +56,10 @@ module.exports = function create (opts) {
       createWindow()
     }
 
-    menubar.showWindow  = showWindow
-    menubar.hideWindow  = hideWindow
-    menubar.preposition = positionWindow
+    menubar.showWindow   = showWindow
+    menubar.hideWindow   = hideWindow
+    menubar.preposition  = positionWindow
+    menubar.prepositionY = positionYWindow
 
     menubar.positioner
 
@@ -113,7 +114,23 @@ module.exports = function create (opts) {
       var y = (opts.y !== undefined) ? opts.y : position.y
 
       menubar.window.setPosition(x, y)
-      
+
+    }
+
+     function positionYWindow( trayPos ){
+
+      var noBoundsPosition = null
+      if ((trayPos === undefined || trayPos.x === 0) && opts['window-position'].substr(0, 4) === 'tray') {
+        noBoundsPosition = (process.platform === 'win32') ? 'bottomRight' : 'topRight'
+      }
+
+      var position = menubar.positioner.calculate(noBoundsPosition || opts['window-position'], trayPos)
+
+      var x = menubar.window.getPosition()[ 0 ]
+      var y = (opts.y !== undefined) ? opts.y : position.y
+
+      menubar.window.setPosition(x, y)
+
     }
 
     function showWindow (trayPos) {

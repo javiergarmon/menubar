@@ -75,9 +75,10 @@ you can pass an optional options object into the menubar constructor
 
 - `dir` (default `process.cwd()`) - the app source directory
 - `index` (default `file:// + opts.dir + index.html`) - the html to load for the pop up window
-- `icon` (default `opts.dir + IconTemplate.png`) - the png icon to use for the menubar
+- `icon` (default `opts.dir + IconTemplate.png`) - the png icon to use for the menubar. A good size to start with is 20x20. To support retina, supply a 2x sized image (e.g. 40x40) with `@2x` added to the end of the name, so `icon.png` and `icon@2x.png` and Electron will automatically use your `@2x` version on retina screens.
+- `tooltip` (default empty) - menubar tray icon tooltip text
 - `tray` (default created on-the-fly) - an electron `Tray` instance. if provided `opts.icon` will be ignored
-- `preloadWindow` (default false) - Create [BrowserWindow](https://github.com/atom/electron/blob/master/docs/api/browser-window.md) instance before it is used -- increasing resource usage, but making the click on the menubar load faster.
+- `preload-window` (default false) - Create [BrowserWindow](https://github.com/atom/electron/blob/master/docs/api/browser-window.md) instance before it is used -- increasing resource usage, but making the click on the menubar load faster.
 - `width` (default 400) - window width
 - `height` (default 400) - window height
 - `x` (default null) - the x position of the window
@@ -85,7 +86,8 @@ you can pass an optional options object into the menubar constructor
 - `always-on-top` (default false) - if true, the window will not hide on blur
 - `show-on-all-workspaces` (default true) - Makes the window available on all OS X workspaces.
 - `window-position` (default trayCenter and trayBottomCenter on Windows) - Sets the window position (x and y will still override this), check [positioner docs](https://github.com/jenslind/electron-positioner#docs) for valid values.
-- `showDockIcon` (default false) - Configure the visibility of the application dock icon.
+- `show-dock-icon` (default false) - Configure the visibility of the application dock icon.
+- `show-on-right-click` (default false) - Show the window on 'right-click' event instead of regular 'click'
 
 ## events
 
@@ -98,7 +100,11 @@ the return value of the menubar constructor is an event emitter
 - `after-show` - the line after window.show is called
 - `hide` - the line before window.hide is called (on window blur)
 - `after-hide` - the line after window.hide is called
+- `after-close` - after the .window (BrowserWindow) property has been deleted
+- `focus-lost` - emitted if always-on-top option is set and the user clicks away
 
 ## tips
 
 - Use `mb.on('after-create-window', callback)` to run things after your app has loaded. For example you could run `mb.window.openDevTools()` to open the developer tools for debugging, or load a different URL with `mb.window.loadUrl()`
+
+- Use `mb.on('focus-lost')` if you would like to perform some operation when using the option `always-on-top:true`

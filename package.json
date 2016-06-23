@@ -1,7 +1,7 @@
 {
   "name": "menubar",
-  "version": "3.0.0",
-  "description": "high level way to create menubar desktop applications with atom-shell",
+  "version": "4.1.2",
+  "description": "high level way to create menubar desktop applications with electron",
   "main": "index.js",
   "repository": {
     "type": "git",
@@ -26,10 +26,10 @@
   },
   "homepage": "https://github.com/maxogden/menubar",
   "dependencies": {
-    "electron-positioner": "https://github.com/black-snow/electron-positioner/tarball/patch-1",
+    "electron-positioner": "^3.0.0",
     "extend": "^2.0.0"
   },
   "devDependencies": {
-    "standard": "^3.2.1"
+    "standard": "^5.4.1"
   }
 }

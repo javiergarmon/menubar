@@ -2,9 +2,10 @@ var path = require('path')
 var events = require('events')
 var fs = require('fs')
 
-var app = require('app')
-var Tray = require('tray')
-var BrowserWindow = require('browser-window')
+var electron = require('electron')
+var app = electron.app
+var Tray = electron.Tray
+var BrowserWindow = electron.BrowserWindow
 
 var extend = require('extend')
 var Positioner = require('electron-positioner')
@@ -16,11 +17,12 @@ module.exports = function create (opts) {
   if (!(path.isAbsolute(opts.dir))) opts.dir = path.resolve(opts.dir)
   if (!opts.index) opts.index = 'file://' + path.join(opts.dir, 'index.html')
   if (!opts['window-position']) opts['window-position'] = (process.platform === 'win32') ? 'trayBottomCenter' : 'trayCenter'
-  if (typeof opts.showDockIcon === 'undefined') opts.showDockIcon = false
+  if (typeof opts['show-dock-icon'] === 'undefined') opts['show-dock-icon'] = false
 
   // set width/height on opts to be usable before the window is created
   opts.width = opts.width || 400
   opts.height = opts.height || 400
+  opts.tooltip = opts.tooltip || ''
 
   app.on('ready', appReady)
 
@@ -39,20 +41,20 @@ module.exports = function create (opts) {
   return menubar
 
   function appReady () {
-    if (app.dock && !opts.showDockIcon) app.dock.hide()
+    if (app.dock && !opts['show-dock-icon']) app.dock.hide()
 
     var iconPath = opts.icon || path.join(opts.dir, 'IconTemplate.png')
     if (!fs.existsSync(iconPath)) iconPath = path.join(__dirname, 'example', 'IconTemplate.png') // default cat icon
 
     var cachedBounds // cachedBounds are needed for double-clicked event
+    var defaultClickEvent = opts['show-on-right-click'] ? 'right-click' : 'click'
 
     menubar.tray = opts.tray || new Tray(iconPath)
+    menubar.tray.on(defaultClickEvent, clicked)
+    menubar.tray.on('double-click', clicked)
+    menubar.tray.setToolTip(opts.tooltip)
 
-    menubar.tray
-      .on('click', click)
-      .on('double-click', click)
-
-    if (opts.preloadWindow) {
+    if (opts.preloadWindow || opts['preload-window']) {
       createWindow()
     }
 
@@ -61,19 +63,12 @@ module.exports = function create (opts) {
     menubar.preposition  = positionWindow
     menubar.prepositionY = positionYWindow
 
-    menubar.positioner
-
     menubar.emit('ready')
 
-    function click (e, bounds) {
+    function clicked (e, bounds) {
       if (e.altKey || e.shiftKey || e.ctrlKey || e.metaKey) return hideWindow()
-
       if (menubar.window && menubar.window.isVisible()) return hideWindow()
-
-      // double click sometimes returns `undefined`
-      bounds = bounds || cachedBounds
-
-      cachedBounds = bounds
+      cachedBounds = bounds || cachedBounds
       showWindow(cachedBounds)
     }
 
@@ -91,12 +86,15 @@ module.exports = function create (opts) {
 
       if (!opts['always-on-top'] || opts['always-listen-blur']) {
         menubar.window.on('blur', hideWindow)
+      } else {
+        menubar.window.on('blur', emitBlur)
       }
 
       if (opts['show-on-all-workspaces'] !== false) {
         menubar.window.setVisibleOnAllWorkspaces(true)
       }
 
+      menubar.window.on('close', windowClear)
       menubar.window.loadURL(opts.index)
       menubar.emit('after-create-window')
     }
@@ -119,6 +117,18 @@ module.exports = function create (opts) {
 
      function positionYWindow( trayPos ){
 
+      if (trayPos && trayPos.x !== 0) {
+        // Cache the bounds
+        cachedBounds = trayPos
+      } else if (cachedBounds) {
+        // Cached value will be used if showWindow is called without bounds data
+        trayPos = cachedBounds
+      } else if (menubar.tray.getBounds) {
+        // Get the current tray bounds
+        trayPos = menubar.tray.getBounds()
+      }
+
+      // Default the window to the right if `trayPos` bounds are undefined or null.
       var noBoundsPosition = null
       if ((trayPos === undefined || trayPos.x === 0) && opts['window-position'].substr(0, 4) === 'tray') {
         noBoundsPosition = (process.platform === 'win32') ? 'bottomRight' : 'topRight'
@@ -152,6 +162,15 @@ module.exports = function create (opts) {
       menubar.emit('hide')
       menubar.window.hide()
       menubar.emit('after-hide')
+    }
+
+    function windowClear () {
+      delete menubar.window
+      menubar.emit('after-close')
+    }
+
+    function emitBlur () {
+      menubar.emit('focus-lost')
     }
   }
 }

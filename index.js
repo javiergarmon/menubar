@@ -84,7 +84,7 @@ module.exports = function create (opts) {
 
       menubar.positioner = new Positioner(menubar.window)
 
-      if (!opts['always-on-top'] || opts['always-listen-blur']) {
+      if (!opts.alwaysOnTop || opts.alwaysListenBlur) {
         menubar.window.on('blur', hideWindow)
       } else {
         menubar.window.on('blur', emitBlur)
